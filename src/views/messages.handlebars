@@ -1,0 +1,33 @@
+<div class="container">
+    <h1 class="mt-4">Mensajes</h1>
+    <form action="/api/messages" method="POST">
+        <div class="form-group">
+            <input type="text" class="form-control" name="user_name" placeholder="Tu nombre" required>
+        </div>
+        <div class="form-group">
+            <input type="email" class="form-control" name="email" placeholder="Tu correo" required>
+        </div>
+        <div class="form-group">
+            <input type="text" class="form-control" name="message" placeholder="Mensaje" required>
+        </div>
+        <button type="submit" class="btn btn-success">
+            Enviar
+        </button>
+         <a href="/api/products/get" class="btn btn-danger">
+            ver productos disponibles
+        </a>
+        <hr>
+    </form>
+    <div>
+        {{#each messages}}
+            <div>
+                <h5>
+                    {{user}} envió:
+                </h5>
+                <strong>
+                    {{message}}
+               
+            </div>
+        {{/each}}
+    </div>
+</div>
