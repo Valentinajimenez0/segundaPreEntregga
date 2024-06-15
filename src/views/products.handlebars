@@ -1,37 +1,112 @@
-<div class="container">
-    <h1 class="mt-4">Productos</h1>
-    <div>
-        {{#each products}}
-        <div>
-            <h5>{{title}}</h5>
-            <p>{{description}}</p>
-            <strong>Precio: ${{price}}</strong>
-            <br>
-            <strong>Stock: {{stock}}</strong>
-            <br>
-            <img src="{{thumbnail}}" alt="{{title}}" style="width: 100px;">
-            <br>
-             <a href="/api/products/get/{{_id}}" class="btn btn-primary mt-auto">Ver más</a>
-
-            <button class="btn btn-success mt-2" onclick="addToCart('{{_id}}')">Agregar al
-                carrito</button>
-            <hr>
-            <div> <a href="/api/products/post" class="btn btn-primary">agregar productos</a>
-            </div>
+ <div class="container mt-5">
+        <h1 class="mt-4">Productos</h1>
+        <div id="product-container">
+            <!-- Los productos se cargarán aquí -->
         </div>
-        {{/each}}
-
-        <div class="mt-4">
-            {{#if prevLink}}
-            <a href="{{prevLink}}" class="btn btn-primary mb-4">Página anterior</a>
-            {{/if}}
-            {{#if nextLink}}
-            <a href="{{nextLink}}" class="btn btn-primary ml-2 mb-4">Página siguiente</a>
-            {{/if}}
-        </div>
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul id="pagination" class="pagination justify-content-center">
+                <!-- La paginación se cargará aquí -->
+            </ul>
+        </nav>
     </div>
-    <p>¿Desea ir a mensajes?</p>
-    <a href="/api/messages" class="btn btn-primary">Ir a Mensajes</a>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+    fetchProducts(1);  // Cargar la primera página inicialmente
+});
 
-</div>
-<script src="/js/addToCart.js"></script>
+function fetchProducts(page) {
+    const limit = 10;  // Puedes ajustar este valor según tus necesidades
+    const sort = '';   // Puedes obtener este valor dinámicamente si lo deseas
+    const query = '';  // Puedes obtener este valor dinámicamente si lo deseas
+
+    fetch(`/products?limit=${limit}&page=${page}&sort=${sort}&query=${query}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        renderProducts(data.docs);
+        renderPagination(data);
+    })
+    .catch(error => console.error('Error al obtener los productos:', error));
+}
+
+function renderProducts(products) {
+    const productContainer = document.getElementById('product-container');
+    productContainer.innerHTML = '';
+
+    products.forEach(product => {
+        const productElement = `
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">${product.title}</h5>
+                    <p class="card-text">${product.description}</p>
+                    <strong>Precio: $${product.price}</strong>
+                    <br>
+                    <strong>Stock: ${product.stock}</strong>
+                    <br>
+                    <img src="${product.thumbnail}" alt="${product.title}" style="width: 100px;">
+                    <br>
+                    <div>
+                        <a href="/products/${product._id}" class="btn btn-primary mt-2">Ver más</a>
+                        <button class="btn btn-success mt-2" onclick="addToCart('${product._id}')">Agregar al carrito</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        productContainer.innerHTML += productElement;
+    });
+}
+
+function renderPagination(data) {
+    const paginationContainer = document.getElementById('pagination');
+    paginationContainer.innerHTML = '';
+
+    if (data.hasPrevPage) {
+        paginationContainer.innerHTML += `
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="fetchProducts(${data.prevPage})">Anterior</a>
+            </li>
+        `;
+    }
+
+    paginationContainer.innerHTML += `
+        <li class="page-item disabled">
+            <a class="page-link" href="#">Página ${data.page} de ${data.totalPages}</a>
+        </li>
+    `;
+
+    if (data.hasNextPage) {
+        paginationContainer.innerHTML += `
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="fetchProducts(${data.nextPage})">Siguiente</a>
+            </li>
+        `;
+    }
+}
+
+function addToCart(productId) {
+    fetch(`/api/carts/add/${productId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Producto agregado al carrito!');
+        } else {
+            alert('Hubo un problema al agregar el producto al carrito.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Hubo un problema al agregar el producto al carrito.');
+    });
+}
+
+    </script>

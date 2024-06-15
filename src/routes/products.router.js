@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 const router = Router();
 
 
-router.get("/get", async (req, res) => {
+router.get("/", async (req, res) => {
     try {
         let { limit, page, sort, query } = req.query;
         limit = parseInt(limit) || 10;
@@ -30,23 +30,19 @@ router.get("/get", async (req, res) => {
 
         let result = await productModel.paginate(filter, options);
 
-        const { totalPages, prevPage, nextPage, page: currentPage, hasPrevPage, hasNextPage } = result;
-        const prevLink = hasPrevPage ? `${req.baseUrl}/get?limit=${limit}&page=${prevPage}&sort=${sort}&query=${query}` : null;
-        const nextLink = hasNextPage ? `${req.baseUrl}/get?limit=${limit}&page=${nextPage}&sort=${sort}&query=${query}` : null;
+        if (req.xhr) {
+            return res.json(result);
+        }
 
-        console.log(`
-        Paginación:
-        Total Pages: ${totalPages}
-        Prev Page: ${prevPage}
-        Next Page: ${nextPage}
-        Current Page: ${currentPage}
-        Has Prev Page: ${hasPrevPage}
-        Has Next Page: ${hasNextPage}
-        Prev Link: ${prevLink}
-        Next Link: ${nextLink}
-        `);
-
-        res.render('products', { products: result.docs, prevLink: prevLink, nextLink, nextLink });
+        res.render('products', { 
+            products: result.docs,
+            totalPages: result.totalPages,
+            currentPage: result.page,
+            hasPrevPage: result.hasPrevPage,
+            hasNextPage: result.hasNextPage,
+            prevPage: result.prevPage,
+            nextPage: result.nextPage
+        });
     } catch (error) {
         console.error("No se pudieron obtener los productos", error);
         res.status(500).json({

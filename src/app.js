@@ -1,5 +1,6 @@
 import express from 'express';
 import mongoose from 'mongoose';
+import dotenv from 'dotenv';
 import userRouter from './routes/users.router.js'
 import productRouter from './routes/products.router.js';
 import messagesRouter from './routes/messages.router.js';
@@ -8,13 +9,16 @@ import __dirname from './utils.js';
 import cartsRouter from './routes/carts.router.js';
 import indexRouter from './routes/index.router.js'
 
+dotenv.config()
+
 const app = express();
 const PORT = 8080
 
 app.use(express.json());
 app.use(express.urlencoded({ extended : true }));
 
- mongoose.connect("mongodb+srv://valentinaJimenez0:Valentina123@clustervj.7lk17ev.mongodb.net/ecommerce?retryWrites=true&w=majority&appName=ClusterVJ")
+ mongoose.connect(process.env.MONGO_URI)
+ 
  .then (()=> {console.log("conectado")})
  .catch (() => {console.error("errorr")})
 

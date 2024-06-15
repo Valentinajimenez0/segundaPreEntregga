@@ -19,24 +19,24 @@ router.post('/post', async (req, res) => {
     }
 });
 
-router.get('/get/:cid', async (req, res) => {
+router.get('/:cid', async (req, res) => {
     try {
-        const cartId = req.params.cid;
+        const cartId = "6658856a23f97843b4bf3bbc";
 
         const cart = await cartModel.findById(cartId).populate({
             path: 'products.product',
             select: 'title description category price code stock status',
             model: productModel
-        });
+        }).lean();
 
         if (!cart) {
             return res.status(404).json({ error: 'Carrito no encontrado' });
         }
 
-        return res.status(200).json(cart);
+        res.render('cart', { cart });
     } catch (error) {
         console.error('Error al obtener el carrito:', error);
-        return res.status(500).json({ error: 'Error al obtener el carrito' });
+        res.status(500).json({ error: 'Error al obtener el carrito' });
     }
 });
 
