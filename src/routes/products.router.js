@@ -1,58 +1,62 @@
-
 import { Router } from "express";
 import productModel from "../models/product.model.js";
 import mongoose from "mongoose";
 
 const router = Router();
 
-
 router.get("/", async (req, res) => {
     try {
-        let { limit, page, sort, query } = req.query;
-        limit = parseInt(limit) || 10;
-        page = parseInt(page) || 1;
-        sort = sort || '';
-        query = query || '';
+        const { limit = 10, page = 1, sort, query, categories } = req.query;
 
-        let filter = {};
-
+        const filter = {};
         if (query) {
-            const categoryRegex = new RegExp(`^${query}$`, 'i');
-            filter = { category: categoryRegex };
+            filter.$or = [
+                { title: new RegExp(query, 'i') },
+                { description: new RegExp(query, 'i') },
+            ];
+        }
+        if (categories) {
+            filter.category = { $in: categories.split(',') };
         }
 
-        let options = {
-            page: page,
-            limit: limit,
-            sort: sort ? { price: sort === 'asc' ? 1 : -1 } : {},
-            lean: true
-        };
-
-        let result = await productModel.paginate(filter, options);
-
-        if (req.xhr) {
-            return res.json(result);
+        const sortOptions = {};
+        if (sort) {
+            sortOptions.price = sort === 'asc' ? 1 : -1;
         }
 
-        res.render('products', { 
-            products: result.docs,
-            totalPages: result.totalPages,
-            currentPage: result.page,
-            hasPrevPage: result.hasPrevPage,
-            hasNextPage: result.hasNextPage,
-            prevPage: result.prevPage,
-            nextPage: result.nextPage
+        const products = await productModel.paginate(filter, {
+            limit: parseInt(limit),
+            page: parseInt(page),
+            sort: sortOptions,
+        });
+
+        res.json({
+            status: "success",
+            payload: products.docs,
+            totalPages: products.totalPages,
+            page: products.page,
+            hasNextPage: products.hasNextPage,
+            hasPrevPage: products.hasPrevPage,
+            prevPage: products.prevPage,
+            nextPage: products.nextPage,
         });
     } catch (error) {
-        console.error("No se pudieron obtener los productos", error);
-        res.status(500).json({
-            status: 'error',
-            message: "No se pudieron obtener los productos"
-        });
+        console.error('Error al obtener los productos:', error);
+        res.status(500).json({ status: "error", error: "Error interno del servidor" });
     }
 });
 
-router.get("/get/:pid", async (req, res) => {
+router.get('/categories', async (req, res) => {
+    try {
+        const categories = await productModel.distinct('category');
+        res.json({ status: 'success', categories });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ status: 'error', message: 'Error al obtener las categorías' });
+    }
+});
+
+router.get("/:pid", async (req, res) => {
     try {
         const pId = req.params.pid;
 
@@ -84,7 +88,7 @@ router.get("/get/:pid", async (req, res) => {
 });
 
 
-router.get("/post", async (req, res) => {
+router.get("/addProduct", async (req, res) => {
     try {
         res.render('addProduct');
     } catch (error) {
@@ -92,7 +96,7 @@ router.get("/post", async (req, res) => {
     }
 })
 
-router.post("/", async (req, res) => {
+router.post("/addProduct", async (req, res) => {
     try {
         let { title, description, category, price, thumbnail, code, stock, status } = req.body;
         if (!title || !description || !category || !price || !thumbnail || !code || !stock ) {
@@ -100,39 +104,10 @@ router.post("/", async (req, res) => {
         }
 
         let result = await productModel.create({ title, description, category, price, thumbnail, code, stock, status });
-        res.render('addProductSuccess', { product: result.toObject() });
+        res.redirect("/products");
     } catch (error) {
         console.error("No se pudo agregar el producto", error);
         res.status(500).send({ status: "error", error: "Error interno del servidor" });
-    }
-});
-
-
-router.get("/put", async (req, res) => {
-    try {
-        res.render('updateProduct');
-    } catch (error) {
-        console.error("No se pudo renderizar la vista", error);
-    }
-});
-
-router.put("/put/:pid", async (req, res) => {
-    let { pid } = req.params;
-    let productToReplace = req.body;
-
-    if (!productToReplace.title || !productToReplace.description || !productToReplace.category || !productToReplace.price || !productToReplace.thumbnail || !productToReplace.code || !productToReplace.stock || !productToReplace.status) {
-        return res.status(400).json({ status: "error", error: "Algunos parametros estan vacios" });
-    }
-
-    try {
-        let result = await productModel.updateOne({ _id: pid }, productToReplace);
-        if (result.nModified === 0) {
-            return res.status(404).json({ status: "error", error: "Producto no encontrado" });
-        }
-        res.json({ status: "success", payload: result });
-    } catch (error) {
-        console.error("Error actualizando el producto:", error);
-        res.status(500).json({ status: "error", error: "Error interno del servidor" });
     }
 });
 

@@ -10,4 +10,14 @@ router.get("/", async (req, res) => {
     }
 })
 
+router.get("/products", async (req, res) => {
+    try {
+        res.render('products', {
+        })
+    } catch (error) {
+        console.error('Error al obtener el carrito:', error)
+        res.status(500).render('products', { error: error.message })
+    }
+})
+
 export default router;

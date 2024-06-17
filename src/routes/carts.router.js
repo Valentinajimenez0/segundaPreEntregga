@@ -21,7 +21,7 @@ router.post('/post', async (req, res) => {
 
 router.get('/:cid', async (req, res) => {
     try {
-        const cartId = "6658856a23f97843b4bf3bbc";
+        const cartId = "66703c985e7a2c5102422757";
 
         const cart = await cartModel.findById(cartId).populate({
             path: 'products.product',
@@ -40,9 +40,10 @@ router.get('/:cid', async (req, res) => {
     }
 });
 
-router.post('/post/:cid/product/:pid', async (req, res) => {
+router.post('/:cid/products/:pid', async (req, res) => {
     try {
         const { cid, pid } = req.params;
+        const {cantidad} = req.body;
 
         const cart = await cartModel.findById(cid);
         if (!cart) {
@@ -60,7 +61,12 @@ router.post('/post/:cid/product/:pid', async (req, res) => {
 
         await cart.save();
 
-        return res.status(200).json(cart);
+        res.json({
+            status: 'success',
+            message: 'Producto agregado al carrito',
+            data: { /* datos del carrito actualizados */ }
+        });
+
     } catch (error) {
         console.error('Error al agregar el producto al carrito:', error);
         return res.status(500).json({ error: 'Error al agregar el producto al carrito' });
